@@ -1,0 +1,16 @@
+---
+- name: Setup NICs
+  hosts: router
+  vars:
+    - base_domain: local
+    - base_name: lab
+    - domain_name: "{{ base_name }}.{{ base_domain }}"
+    - network_connections:
+      - name: "{{ wan_nic }}"
+        type: pppoe
+        ip:
+          address:
+            - dhcp
+
+  roles:
+    - rhel-system-roles.network

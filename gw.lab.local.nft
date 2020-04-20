@@ -1,0 +1,43 @@
+#!/user/sbin/nft -f
+
+#Define wan and lan links plus any multicast sources or groups
+define WAN_DEV = telekom
+define LAN1_DEV = enp7s0
+
+#Flush the rule set
+flush ruleset
+
+#Standard masquerade for LAN IPv4 private addresses
+table ip router {
+  chain prerouting {
+    type nat hook prerouting priority 0; policy accept;
+  }
+  chain postrouting {
+    type nat hook postrouting priority 100; policy accept;
+      oifname $WAN_DEV masquerade
+  }
+}
+
+table inet router {
+  chain input {
+    type filter hook input priority 0; policy drop;
+      iif lo accept
+      iifname $LAN1_DEV accept
+      iifname $WAN_DEV ct state related,established accept
+      ip6 nexthdr icmpv6 counter accept comment "accept all ICMP types"
+      limit rate 10/minute log prefix "DROP_input: "
+  }
+
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+
+  chain forward {
+    type filter hook forward priority 10; policy drop;
+     meta l4proto tcp tcp flags & (syn|rst) == syn counter packets 0 bytes 0 tcp option maxseg size set rt mtu
+     iifname $LAN1_DEV oifname $WAN_DEV accept
+     iifname $WAN_DEV oifname $LAN1_DEV ct state related,established accept
+     udp dport 10000 accept
+     limit rate 10/minute log prefix "DROP_forward: "
+  }
+}
