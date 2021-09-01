@@ -1,0 +1,105 @@
+---
+
+dns: "10.0.0.2"
+vlan1: "172.16.1.0/24"
+vlan1_baseName: "home"
+vlan1_baseDomain: "lajoie.de"
+
+nodes:
+  workers:
+    - name: "worker1"
+      ipaddr: "{{ nodes_subnet24 | default ('192.168.126')}}.21"
+      netmask: "{{ nodes_mask24 | default ('255.255.255')}}.0"
+      gw: "{{ nodes_subnet24 | default ('192.168.126')}}.254"
+      macaddr: "0c:c4:7a:20:60:c8"
+      ipmi_ip: "192.168.16.133"
+      ipmi_type: hpe
+      disk: "sda"
+      boot: "uefi"
+      nic_pxe: ens1f0
+    - name: "worker2"
+      ipaddr: "{{ nodes_subnet24 | default ('192.168.126')}}.22"
+      netmask: "{{ nodes_mask24 | default ('255.255.255')}}.0"
+      gw: "{{ nodes_subnet24 | default ('192.168.126')}}.254"
+      macaddr: "0c:c4:7a:20:61:c8"
+      ipmi_ip: "192.168.16.138"
+      ipmi_type: hpe
+      disk: "sda"
+      boot: "uefi"
+      nic_pxe: ens1f0
+  
+  storage:
+    - name: "master1"
+      osd_disk: "/dev/disk/by-id/nvme-INTEL_SSDPE2KE032T8_BTLN902000GW3P2BGN"
+    - name: "master2"
+      osd_disk: "/dev/disk/by-id/nvme-INTEL_SSDPE2KE032T8_BTLN902003DU3P2BGN"
+    - name: "master3"
+      osd_disk: "/dev/disk/by-id/nvme-INTEL_SSDPE2KE032T8_BTLN902000JY3P2BGN"
+
+dhcp:
+  gateway: "{{ nodes_subnet24 | default ('192.168.126')}}.254"
+  broadcast: "{{ nodes_subnet24 | default ('192.168.126')}}.255"
+  netmask: "{{ nodes_mask24 | default ('255.255.255')}}.0"
+  poolstart: "{{ nodes_subnet24 | default ('192.168.126')}}.129"
+  poolend: "{{ nodes_subnet24 | default ('192.168.126')}}.252"
+  subnet: "{{ nodes_subnet24 | default ('192.168.126')}}.0"
+
+ocp_mirror: "https://mirror.openshift.com/pub/openshift-v4"
+
+ocp_rootfs: "{{ ocp_mirror }}/dependencies/rhcos/4.{{ ocp_release.split('.')[1] | lower }}/{{ ocp_release }}/rhcos-{{ ocp_release }}-x86_64-live-rootfs.x86_64.img"
+ocp_initramfs: "{{ ocp_mirror }}/dependencies/rhcos/4.{{ ocp_release.split('.')[1] | lower }}/{{ ocp_release }}/rhcos-{{ ocp_release }}-x86_64-live-initramfs.x86_64.img"
+ocp_kernel: "{{ ocp_mirror }}/dependencies/rhcos/4.{{ ocp_release.split('.')[1] | lower }}/{{ ocp_release }}/rhcos-{{ ocp_release }}-x86_64-live-kernel-x86_64"
+
+ign_folder: /var/www/html/ignition
+ocp_install_path: "/root/ocp"
+
+ocp_folders:
+  - "{{ ign_folder }}"
+  - "{{ ocp_install_path }}"
+  - /root/bin
+
+ocp_release: "4.8.2"
+
+#https://unix.stackexchange.com/questions/363878/which-selinux-policies-apply-to-haproxy
+selinux_policy: targeted
+selinux_state: enforcing
+selinux_ports:
+  - { ports: '6443', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  - { ports: '22623', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  - { ports: '9000', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  - { ports: '8080', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  - { ports: '80', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  - { ports: '443', proto: 'tcp', setype: 'http_port_t', state: 'present' }
+  
+#check results via semanage port -l | grep -E 'http_cache_port_t|commplex_main_port_t|http_port_t'
+
+mount_point: /tmp/iso
+efi_dir: "{{ mount_point }}/EFI/BOOT"
+bios_dir: /usr/share/syslinux
+boot_dir: "{{ mount_point }}/images/pxeboot"
+boot_iso: rhel8.4.iso
+rhel_version: RHEL-8.4
+firewall_zone: public
+dns_forwarder: 8.8.4.4
+
+efifiles:
+  - BOOTX64.EFI
+  - grubx64.efi
+biosfiles:
+  - pxelinux.0
+  - ldlinux.c32
+  - menu.c32
+  - libutil.c32
+rhel_bootfiles:
+  - initrd.img
+  - vmlinuz
+tftp_dir: /var/lib/tftpboot
+folders_pxe:
+  - "{{ tftp_dir }}"
+  - "{{ tftp_dir }}/uefi"
+  - "{{ tftp_dir }}/{{ rhel_version }}"
+  - "{{ tftp_dir }}/pxelinux"
+  - "{{ tftp_dir }}/pxelinux/pxelinux.cfg"
+  - /var/www/html/images
+  - /var/www/html/kickstarts
+  - "/var/www/html/{{ rhel_version }}"

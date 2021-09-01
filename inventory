@@ -1,15 +1,2 @@
 [router]
-gw ansible_host=192.168.1.1 ethernet="00:1b:21:bb:31:ca" wan_nic="enp3s0" lan_nic="enp7s0"
-
-[ubiquiti]
-cloudkey ansible_host=192.168.1.30 ethernet="74:83:c2:17:45:53"
-switch1 ansible_host=192.168.1.31 ethernet="fc:ec:da:78:ad:ed"
-switch2 ansible_host=192.168.1.32 ethernet="f0:9f:c2:68:26:ee"
-ap1 ansible_host=192.168.1.33 ethernet="fc:ec:da:71:d9:e5"
-ap2 ansible_host=192.168.1.34 ethernet="fc:ec:da:71:c6:9b"
-
-[iptvs]
-iptv ansible_host=192.168.1.35 ethernet="ac:6f:bb:5d:58:d6"
-
-[storage]
-nas1 ansible_host=192.168.1.20 ethernet="00:11:32:b4:b2:a3"
+gw ansible_host=192.168.1.191
